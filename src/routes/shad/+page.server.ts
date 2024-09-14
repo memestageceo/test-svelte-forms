@@ -1,28 +1,10 @@
-import { formSchemaSnap } from '$lib/schema';
+import { superValidate } from 'sveltekit-superforms';
 import type { PageServerLoad } from './$types';
-
-import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
+import { migrationFormSchema } from '$lib/formSchema';
 
 export const load: PageServerLoad = async () => {
-	return {
-		form: await superValidate(zod(formSchemaSnap))
-	};
-};
+	const form = await superValidate(zod(migrationFormSchema));
 
-export const actions = {
-	default: async ({ request }) => {
-		const form = await superValidate(request, zod(formSchemaSnap));
-		console.log(form);
-
-		if (!form.valid) {
-			// Again, return { form } and things will just work.
-			return fail(400, { form });
-		}
-
-		// TODO: Do something with the validated form.data
-
-		// Display a success status message
-		return message(form, 'Form posted successfully!');
-	}
+	return { form };
 };

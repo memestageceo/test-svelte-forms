@@ -1,116 +1,116 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
 	import * as Form from '$lib/components/ui/form';
-	import { Input } from '$lib/components/ui/input';
-	import { formSchemaSnap, type FormSchemaSnapType } from '$lib/schema';
-	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
-
-	import { type SuperValidated, type Infer, superForm } from 'sveltekit-superforms';
+	import SuperDebug from 'sveltekit-superforms';
+	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { migrationFormSchema } from '$lib/formSchema';
 	import type { PageData } from './$types';
-	import * as Select from '$lib/components/ui/select';
-	import { Toaster } from '$lib/components/ui/sonner';
-	import type { Selected } from 'bits-ui';
-
-	let fromApp = $state<Selected<FormSchemaSnapType['from-app']>>();
-	let toApp = $state<Selected<FormSchemaSnapType['to-app']>>();
+	import { Input } from '$lib/components/ui/input';
+	import * as Select from '$lib/components/ui/select/index.js';
+	import { accountingSoftware, supportedSoftware } from '$lib/accountingApps';
 
 	let { data }: { data: PageData } = $props();
-
 	const form = superForm(data.form, {
-		// validators: zodClient(formSchemaSnap),
-		onUpdated: ({ form: f }) => {
-			if (f.valid) {
-				toast.success(`You submitted ${JSON.stringify(f.data, null, 2)}`);
-			} else {
-				toast.error('Please fix the errors in the form.');
-			}
-		}
+		validators: zodClient(migrationFormSchema)
 	});
+
 	const { form: formData, enhance } = form;
+
+	function deslugify(str: string) {
+		return str
+			.split('-')
+			.map((word) => word[0].toUpperCase() + word.slice(1))
+			.join(' ');
+	}
+
+	let fromApp = $derived(
+		$formData.email
+			? {
+					label: $formData.email,
+					value: $formData.email
+				}
+			: undefined
+	);
 </script>
 
-<!-- TODO: FIX ERROR on MIGRATING TO SELECT FIELD. -->
-<form method="POST" use:enhance action="/shad">
+<h1 class="text-semibold my-2 text-center text-3xl">Shadcn Svelte Form {fromApp}</h1>
+
+<form action="" class="my-10 flex flex-col gap-2" method="post">
+	<!-- Name of the User 👤👤👤 -->
 	<Form.Field {form} name="name">
 		<Form.Control let:attrs>
-			<Form.Label>name</Form.Label>
+			<Form.Label>Name</Form.Label>
 			<Input {...attrs} bind:value={$formData.name} />
 		</Form.Control>
-		<Form.Description>This is your public display name.</Form.Description>
+		<Form.Description>Name of the User.</Form.Description>
 		<Form.FieldErrors />
 	</Form.Field>
+	<!-- Email of the user 📧📧📧 -->
 	<Form.Field {form} name="email">
 		<Form.Control let:attrs>
-			<Form.Label>email</Form.Label>
-			<Input type="email" {...attrs} bind:value={$formData.email} />
+			<Form.Label>Email</Form.Label>
+			<Input {...attrs} bind:value={$formData.email} />
 		</Form.Control>
-		<Form.Description>This is your public display name.</Form.Description>
+		<Form.Description>Email ID of the user</Form.Description>
 		<Form.FieldErrors />
 	</Form.Field>
+
+	<!-- Phone no of the user ☎️☎️☎️ -->
 	<Form.Field {form} name="tel">
 		<Form.Control let:attrs>
-			<Form.Label>tel</Form.Label>
-			<Input type="tel" {...attrs} bind:value={$formData.tel} />
+			<Form.Label>Phone no.</Form.Label>
+			<Input {...attrs} bind:value={$formData.tel} />
 		</Form.Control>
-		<Form.Description>This is your public display name.</Form.Description>
-		<Form.FieldErrors />
 	</Form.Field>
-	<Form.Field {form} name="from-app">
+
+	<!-- Migrating from  (🍎) 🏃‍➡️🏃‍➡️🏃‍➡️🏃‍➡️🏃‍➡️🏃‍➡️ -->
+	<Form.Field {form} name="fromApp">
 		<Form.Control let:attrs>
-			<Form.Label>Migrating From</Form.Label>
+			<Form.Label>Current Accounting Solution:</Form.Label>
 			<Select.Root
 				selected={fromApp}
 				onSelectedChange={(v) => {
-					v && ($formData['from-app'] = v.value);
+					v && ($formData.fromApp = v.value);
 				}}
 			>
-				<Select.Trigger class="w-[180px]">
-					<Select.Value placeholder="Theme" />
+				<Select.Trigger class="w-[180px]" {...attrs}>
+					<Select.Value placeholder="Migrating From" />
 				</Select.Trigger>
 				<Select.Content>
-					<Select.Item value="option1">option1</Select.Item>
-					<Select.Item value="option2">option2</Select.Item>
-					<Select.Item value="option3">option3</Select.Item>
+					<Select.Group>
+						<Select.Label>Migrating From</Select.Label>
+						{#each accountingSoftware as app}
+							<Select.Item value={app} label={app}>{deslugify(app)}</Select.Item>
+						{/each}
+					</Select.Group>
 				</Select.Content>
+				<Select.Input name="fromApp" />
 			</Select.Root>
 		</Form.Control>
+		<Form.Description>Current Accounting Solution that you are using.</Form.Description>
+		<Form.FieldErrors />
 	</Form.Field>
-	<Form.Field {form} name="to-app">
+	<Form.Field {form} name="toApp">
 		<Form.Control let:attrs>
-			<Form.Label>Migrating To</Form.Label>
-			<Select.Root
-				selected={toApp}
-				onSelectedChange={(v) => {
-					v && ($formData['to-app'] = v.value);
-				}}
-			>
-				<Select.Trigger class="w-[180px]">
-					<Select.Value placeholder="Theme" />
-				</Select.Trigger>
-				<Select.Content>
-					<Select.Item value="option1">option1</Select.Item>
-					<Select.Item value="option2">option2</Select.Item>
-					<Select.Item value="option3">option3</Select.Item>
-				</Select.Content>
-			</Select.Root>
-		</Form.Control>
-	</Form.Field>
-	<Form.Field {form} name="agree">
-		<Form.Control let:attrs>
-			<div class="items-top flex space-x-2">
-				<Checkbox id="agree" />
-				<Form.Label
-					for="agree"
-					class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-				>
-					Accept terms and conditions
-				</Form.Label>
-			</div>
-		</Form.Control>
-	</Form.Field>
-	<Form.Button>Submit</Form.Button>
-</form>
+			<Form.Label>Destination Accounting Solution:</Form.Label>
 
-<Toaster />
+			<Select.Root>
+				<Select.Trigger class="w-[180px]">
+					<Select.Value placeholder="Migrating To" />
+				</Select.Trigger>
+				<Select.Content>
+					<Select.Group>
+						<Select.Label>Migrating To</Select.Label>
+						{#each supportedSoftware as app}
+							<Select.Item value={app} label={deslugify(app)}>{deslugify(app)}</Select.Item>
+						{/each}
+					</Select.Group>
+				</Select.Content>
+				<Select.Input name="toApp" />
+			</Select.Root>
+		</Form.Control>
+		<Form.Description>The accounting solution you want to switch to.</Form.Description>
+		<Form.FieldErrors />
+	</Form.Field>
+</form>
+<SuperDebug data={$formData} />
