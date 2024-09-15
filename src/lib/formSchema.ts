@@ -8,7 +8,13 @@ export const migrationFormSchema = z
 		tel: z.string().optional(),
 		fromApp: z.enum(accountingSoftware),
 		toApp: z.enum(supportedSoftware).default('myob'),
-		agree: z.literal(true)
+		agree: z
+			.boolean()
+			.default(false)
+			.refine((data) => {
+				console.log('date -> ', data);
+				return data === true;
+			})
 	})
 	.refine(
 		(data) => {
